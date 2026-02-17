@@ -16,11 +16,17 @@ def load_highscores():
     if not os.path.exists(HIGHSCORE_FILE):
         return {"player": [], "stadium": [], "trainer": []}
     with open(HIGHSCORE_FILE, "r") as f:
-        return json.load(f)
+        data = json.load(f)
+    # sicherstellen, dass alle Keys existieren
+    for key in ["player", "stadium", "trainer"]:
+        if key not in data:
+            data[key] = []
+    return data
 
 def save_highscore(mode, name, score):
     highscores = load_highscores()
     highscores[mode].append({"name": name, "score": score})
+    # Top 5
     highscores[mode] = sorted(highscores[mode], key=lambda x: x["score"], reverse=True)[:5]
     with open(HIGHSCORE_FILE, "w") as f:
         json.dump(highscores, f)
@@ -119,7 +125,7 @@ teams = {
 all_teams = list(teams.keys())
 
 # ==============================
-# QUIZ FUNKTIONEN
+# QUIZ-FUNKTIONEN
 # ==============================
 def generate_options(correct_team):
     wrong = random.sample([t for t in all_teams if t != correct_team], 3)
@@ -184,15 +190,15 @@ if st.session_state.mode is None:
     col1, col2, col3 = st.columns(3)
     with col1:
         st.markdown("### 👤 Spieler-Quiz")
-        for entry in highscores["player"]:
+        for entry in highscores.get("player", []):
             st.write(f"{entry['name']} – {entry['score']}")
     with col2:
         st.markdown("### 🏟 Stadion-Quiz")
-        for entry in highscores["stadium"]:
+        for entry in highscores.get("stadium", []):
             st.write(f"{entry['name']} – {entry['score']}")
     with col3:
         st.markdown("### 🧑‍💼 Trainer-Quiz")
-        for entry in highscores["trainer"]:
+        for entry in highscores.get("trainer", []):
             st.write(f"{entry['name']} – {entry['score']}")
     st.stop()
 
