@@ -171,7 +171,7 @@ if st.session_state.mode is None:
     if col1.button("👤 Spieler → Verein"):
         reset_quiz("player")
         st.rerun()
-    if col2.button("🏟️ Stadion → Verein"):
+    if col2.button("🏟 Stadion → Verein"):
         reset_quiz("stadium")
         st.rerun()
     if col3.button("🧑‍💼 Trainer → Verein"):
@@ -216,6 +216,8 @@ correct = current["correct_team"]
 options = current["options"]
 
 st.progress(st.session_state.index / len(st.session_state.questions))
+
+# Frage-Titel
 if st.session_state.mode == "player":
     st.subheader(f"Bei welchem Verein spielt **{question}**?")
 elif st.session_state.mode == "stadium":
@@ -223,20 +225,20 @@ elif st.session_state.mode == "stadium":
 else:
     st.subheader(f"Zu welchem Verein gehört der Trainer **{question}**?")
 
-for option in options:
-    color = "secondary"
-    if st.session_state.answered:
-        if option == correct:
-            color = "primary"
-        elif option == st.session_state.selected:
-            color = "danger"
-    if st.button(option, key=option + str(st.session_state.index), disabled=st.session_state.answered, type=color):
-        st.session_state.selected = option
-        st.session_state.answered = True
-        if option == correct:
-            st.session_state.score += 1
-        st.rerun()
+# Auswahl per Radio-Button
+if not st.session_state.answered:
+    st.session_state.selected = st.radio("Wähle deine Antwort:", options)
 
+# Antwort bestätigen
+if st.button("Antwort bestätigen") and not st.session_state.answered:
+    st.session_state.answered = True
+    if st.session_state.selected == correct:
+        st.session_state.score += 1
+        st.success(f"✅ Richtig! {st.session_state.selected} ist korrekt.")
+    else:
+        st.error(f"❌ Falsch! Richtige Antwort: {correct}")
+
+# Nächste Frage
 if st.session_state.answered:
     if st.button("➡️ Nächste Frage"):
         st.session_state.index += 1
