@@ -89,10 +89,8 @@ all_teams = list(teams.keys())
 # ==============================
 
 def generate_options(correct_team):
-    wrong_teams = random.sample(
-        [team for team in all_teams if team != correct_team], 3
-    )
-    options = wrong_teams + [correct_team]
+    wrong = random.sample([t for t in all_teams if t != correct_team], 3)
+    options = wrong + [correct_team]
     random.shuffle(options)
     return options
 
@@ -113,35 +111,24 @@ def reset_quiz():
     st.session_state.score = 0
     st.session_state.questions = generate_questions()
     st.session_state.answered = False
-    st.session_state.selected_option = None
     st.session_state.quiz_finished = False
 
 
 # ==============================
-# SESSION STATE INITIALISIERUNG
+# SESSION STATE
 # ==============================
 
 if "question_index" not in st.session_state:
     reset_quiz()
 
-
 # ==============================
 # UI
 # ==============================
 
-st.title("⚽ Bundesliga Quiz – Saison 2025/26")
-st.write("Teste dein Wissen über die Vereine!")
+st.title("⚽ Bundesliga Quiz 2025/26")
 
-# Quiz beendet?
 if st.session_state.quiz_finished:
-    st.subheader(f"🏁 Runde beendet! Deine Punktzahl: {st.session_state.score}/10")
-
-    if st.session_state.score <= 3:
-        st.error("Kreisliga-Experte")
-    elif st.session_state.score <= 7:
-        st.warning("Bundesliga-Kenner")
-    else:
-        st.success("Transfermarkt-Profi")
+    st.subheader(f"🏁 Ergebnis: {st.session_state.score}/10")
 
     if st.button("🔄 Neue Runde starten"):
         reset_quiz()
@@ -149,17 +136,14 @@ if st.session_state.quiz_finished:
 
     st.stop()
 
-# Fortschritt
 st.progress(st.session_state.question_index / 10)
-st.write(f"Frage {st.session_state.question_index + 1} von 10")
 
-# Aktuelle Frage
-current_question = st.session_state.questions[st.session_state.question_index]
-player = current_question["player"]
-correct_team = current_question["correct_team"]
-options = current_question["options"]
+current = st.session_state.questions[st.session_state.question_index]
+player = current["player"]
+correct_team = current["correct_team"]
+options = current["options"]
 
-st.subheader(f"Bei welchem Verein spielt **{player}** in der Saison 2025/26?")
+st.subheader(f"Bei welchem Verein spielt **{player}**?")
 
 selected = st.radio(
     "Wähle deine Antwort:",
@@ -168,26 +152,38 @@ selected = st.radio(
     disabled=st.session_state.answered
 )
 
-if st.button("Antwort bestätigen") and not st.session_state.answered:
+# ==============================
+# ANTWORT BESTÄTIGEN
+# ==============================
+
+if st.button("Antwort abschicken") and not st.session_state.answered:
     st.session_state.answered = True
-    st.session_state.selected_option = selected
 
     if selected == correct_team:
         st.session_state.score += 1
 
-# Feedback
+# ==============================
+# FEEDBACK MIT MARKIERUNG
+# ==============================
+
 if st.session_state.answered:
-    if st.session_state.selected_option == correct_team:
-        st.success("✅ Richtig!")
-    else:
-        st.error(f"❌ Falsch! Richtige Antwort: {correct_team}")
+
+    st.write("### Lösung:")
+
+    for option in options:
+        if option == correct_team:
+            st.markdown(f"🟢 **{option}** (Richtig)")
+        elif option == selected:
+            st.markdown(f"🔴 **{option}** (Deine Antwort)")
+        else:
+            st.markdown(f"{option}")
 
     if st.button("➡️ Nächste Frage"):
         st.session_state.question_index += 1
         st.session_state.answered = False
-        st.session_state.selected_option = None
 
         if st.session_state.question_index >= 10:
             st.session_state.quiz_finished = True
 
         st.rerun()
+
