@@ -8,7 +8,7 @@ import random
 st.set_page_config(page_title="Bundesliga Quiz 2025/26", page_icon="⚽", layout="centered")
 
 # ==============================
-# VEREINS-DATEN (DEIN ORIGINAL + STADIEN)
+# DATEN (ALLE TEAMS)
 # ==============================
 
 teams = {
@@ -159,6 +159,7 @@ def reset_quiz(mode):
     st.session_state.question_index = 0
     st.session_state.score = 0
     st.session_state.answered = False
+    st.session_state.selected = None
     st.session_state.quiz_finished = False
 
     if mode == "player":
@@ -168,7 +169,7 @@ def reset_quiz(mode):
 
 
 # ==============================
-# SESSION STATE
+# SESSION STATE INIT
 # ==============================
 
 if "mode" not in st.session_state:
@@ -219,31 +220,43 @@ if st.session_state.mode == "player":
 else:
     st.subheader(f"Zu welchem Verein gehört das Stadion **{question}**?")
 
-selected = st.radio(
-    "Wähle deine Antwort:",
-    options,
-    key=f"radio_{st.session_state.question_index}",
-    disabled=st.session_state.answered
-)
+# ==============================
+# ANTWORT BUTTONS MIT FARBEN
+# ==============================
 
-if st.button("Antwort abschicken") and not st.session_state.answered:
-    st.session_state.answered = True
-    if selected == correct_team:
-        st.session_state.score += 1
+for option in options:
+
+    button_type = "secondary"
+
+    if st.session_state.answered:
+        if option == correct_team:
+            button_type = "primary"  # Grün (richtig)
+        elif option == st.session_state.selected:
+            button_type = "secondary"
+
+    if st.button(
+        option,
+        key=f"{option}_{st.session_state.question_index}",
+        disabled=st.session_state.answered,
+        type=button_type
+    ):
+        st.session_state.selected = option
+        st.session_state.answered = True
+
+        if option == correct_team:
+            st.session_state.score += 1
+
+        st.rerun()
+
+# ==============================
+# NÄCHSTE FRAGE
+# ==============================
 
 if st.session_state.answered:
-    st.write("### Lösung:")
-    for option in options:
-        if option == correct_team:
-            st.markdown(f"🟢 **{option}** (Richtig)")
-        elif option == selected:
-            st.markdown(f"🔴 **{option}** (Deine Antwort)")
-        else:
-            st.markdown(option)
-
     if st.button("➡️ Nächste Frage"):
         st.session_state.question_index += 1
         st.session_state.answered = False
+        st.session_state.selected = None
 
         if st.session_state.question_index >= len(st.session_state.questions):
             st.session_state.quiz_finished = True
