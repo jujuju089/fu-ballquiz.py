@@ -9,7 +9,6 @@ st.set_page_config(page_title="Bundesliga Quiz 2025/26", page_icon="⚽", layout
 
 # ==============================
 # VEREINS- UND SPIELERDATEN
-# (realistisch angenommene Kader 2025/26)
 # ==============================
 
 teams = {
@@ -86,43 +85,54 @@ all_players = [(player, team) for team, players in teams.items() for player in p
 all_teams = list(teams.keys())
 
 # ==============================
-# SESSION STATE INITIALISIERUNG
-# ==============================
-
-if "question_index" not in st.session_state:
-    st.session_state.question_index = 0
-    st.session_state.score = 0
-    st.session_state.questions = random.sample(all_players, 10)
-    st.session_state.answered = False
-    st.session_state.selected_option = None
-    st.session_state.quiz_finished = False
-
-# ==============================
 # FUNKTIONEN
 # ==============================
 
 def generate_options(correct_team):
-    wrong_teams = random.sample([team for team in all_teams if team != correct_team], 3)
+    wrong_teams = random.sample(
+        [team for team in all_teams if team != correct_team], 3
+    )
     options = wrong_teams + [correct_team]
     random.shuffle(options)
     return options
 
+
+def generate_questions():
+    questions = []
+    for player, team in random.sample(all_players, 10):
+        questions.append({
+            "player": player,
+            "correct_team": team,
+            "options": generate_options(team)
+        })
+    return questions
+
+
 def reset_quiz():
     st.session_state.question_index = 0
     st.session_state.score = 0
-    st.session_state.questions = random.sample(all_players, 10)
+    st.session_state.questions = generate_questions()
     st.session_state.answered = False
     st.session_state.selected_option = None
     st.session_state.quiz_finished = False
+
+
+# ==============================
+# SESSION STATE INITIALISIERUNG
+# ==============================
+
+if "question_index" not in st.session_state:
+    reset_quiz()
+
 
 # ==============================
 # UI
 # ==============================
 
 st.title("⚽ Bundesliga Quiz – Saison 2025/26")
-st.write("Teste dein Wissen über die Vereine der Saison 2025/26!")
+st.write("Teste dein Wissen über die Vereine!")
 
-# Wenn Quiz beendet
+# Quiz beendet?
 if st.session_state.quiz_finished:
     st.subheader(f"🏁 Runde beendet! Deine Punktzahl: {st.session_state.score}/10")
 
@@ -140,18 +150,23 @@ if st.session_state.quiz_finished:
     st.stop()
 
 # Fortschritt
-progress = st.session_state.question_index / 10
-st.progress(progress)
+st.progress(st.session_state.question_index / 10)
 st.write(f"Frage {st.session_state.question_index + 1} von 10")
 
 # Aktuelle Frage
-player, correct_team = st.session_state.questions[st.session_state.question_index]
-options = generate_options(correct_team)
+current_question = st.session_state.questions[st.session_state.question_index]
+player = current_question["player"]
+correct_team = current_question["correct_team"]
+options = current_question["options"]
 
 st.subheader(f"Bei welchem Verein spielt **{player}** in der Saison 2025/26?")
 
-# Antwortauswahl
-selected = st.radio("Wähle deine Antwort:", options, key=f"q_{st.session_state.question_index}")
+selected = st.radio(
+    "Wähle deine Antwort:",
+    options,
+    key=f"radio_{st.session_state.question_index}",
+    disabled=st.session_state.answered
+)
 
 if st.button("Antwort bestätigen") and not st.session_state.answered:
     st.session_state.answered = True
@@ -160,7 +175,7 @@ if st.button("Antwort bestätigen") and not st.session_state.answered:
     if selected == correct_team:
         st.session_state.score += 1
 
-# Feedback anzeigen
+# Feedback
 if st.session_state.answered:
     if st.session_state.selected_option == correct_team:
         st.success("✅ Richtig!")
